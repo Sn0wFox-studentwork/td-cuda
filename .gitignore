@@ -1,10 +1,10 @@
-# Visual studio
+# Visual Studio
 .vs/
+*.sln
 *.vcxproj
-*.pdb
+*.vcxproj.user
 
-# Build
+# Builds
 x64/
 x86/
 Win32/
-Debug/
