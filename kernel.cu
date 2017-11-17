@@ -1,42 +1,60 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-
 #include <stdio.h>
 
-const int N = 16;
-const int blocksize = 16;
+#include "wb.h"
 
 __global__
-void hello(char *a, int *b)
-{
-	a[threadIdx.x] += b[threadIdx.x];
+void vecAdd(float *in1, float *in2, float *out, int len) {
+
 }
 
-int main()
-{
-	char a[N] = "Hello \0\0\0\0\0\0";
-	int b[N] = { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int main(int argc, char **argv) {
+	wbArg_t args;
+	int inputLength;
+	float *hostInput1;
+	float *hostInput2;
+	float *hostOutput;
+	float *deviceInput1;
+	float *deviceInput2;
+	float *deviceOutput;
+	args = wbArg_read(argc, argv);
+	wbTime_start(Generic, "Importing data and creating memory on host");
+	hostInput1 =
+		(float *)wbImport(wbArg_getInputFile(args, 0), &inputLength);
+	hostInput2 =
+		(float *)wbImport(wbArg_getInputFile(args, 1), &inputLength);
+	hostOutput = (float *)malloc(inputLength * sizeof(float));
+	wbTime_stop(Generic, "Importing data and creating memory on host");
+	wbLog(TRACE, "The input length is ", inputLength);
+	wbTime_start(GPU, "Allocating GPU memory.");
 
-	char *ad;
-	int *bd;
-	const int csize = N * sizeof(char);
-	const int isize = N * sizeof(int);
+	//@@ Allocate GPU memory here
+	wbTime_stop(GPU, "Allocating GPU memory.");
+	wbTime_start(GPU, "Copying input memory to the GPU.");
 
-	printf("%s", a);
+	//@@ Copy memory to the GPU here
+	wbTime_stop(GPU, "Copying input memory to the GPU.");
 
-	cudaMalloc((void**)&ad, csize);
-	cudaMalloc((void**)&bd, isize);
-	cudaMemcpy(ad, a, csize, cudaMemcpyHostToDevice);
-	cudaMemcpy(bd, b, isize, cudaMemcpyHostToDevice);
+	//@@ Initialize the grid and block dimensions here
+	wbTime_start(Compute, "Performing CUDA computation");
 
-	dim3 dimBlock(blocksize, 1);
-	dim3 dimGrid(1, 1);
-	hello <<<dimGrid, dimBlock>>>(ad, bd);
-	cudaMemcpy(a, ad, csize, cudaMemcpyDeviceToHost);
-	cudaFree(ad);
-	cudaFree(bd);
+	//@@ Launch the GPU Kernel here
+	cudaDeviceSynchronize();
+	wbTime_stop(Compute, "Performing CUDA computation");
+	wbTime_start(Copy, "Copying output memory to the CPU");
 
-	printf("%s\n", a);
+	//@@ Copy the GPU memory back to the CPU here
+	wbTime_stop(Copy, "Copying output memory to the CPU");
+	wbTime_start(GPU, "Freeing GPU Memory");
+
+	//@@ Free the GPU memory here
+	wbTime_stop(GPU, "Freeing GPU Memory");
+	wbSolution(args, hostOutput, inputLength);
+	free(hostInput1);
+	free(hostInput2);
+	free(hostOutput);
+
 	return 0;
 }
