@@ -1,3 +1,10 @@
 # Visual studio
 .vs/
 *.vcxproj
+*.pdb
+
+# Build
+x64/
+x86/
+Win32/
+Debug/
