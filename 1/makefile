@@ -1,4 +1,4 @@
-DATASET=./dataset/vector
+DATASET=../dataset/vector
 BUILD=build
 
 build: kernel.cu

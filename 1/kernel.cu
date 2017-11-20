@@ -1,9 +1,8 @@
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdio.h>
 
-#include "wb.h"
+#include "../wb.h"
 
 
 #define wbCheck(stmt) \

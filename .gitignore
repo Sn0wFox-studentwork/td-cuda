@@ -1,7 +1,5 @@
 # Visual Studio
 .vs/
-*.sln
-*.vcxproj
 *.vcxproj.user
 
 # Builds
