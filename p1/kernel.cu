@@ -28,14 +28,14 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 __global__
 void histo(unsigned int *data, unsigned int *bins, int len) {
   int id = threadIdx.x + blockDim.x * blockIdx.x;
-  int i = id;
+  int i = threadIdx.x;
   int totalNumberOfThreads = blockDim.x * gridDim.x;
 
   // Init shared memory (faster than global)
   __shared__ unsigned int privateHisto[NUM_BINS];
   while (i < NUM_BINS) {
     privateHisto[i] = 0;
-    i += totalNumberOfThreads;
+    i += blockDim.x;
   }
   __syncthreads();
 
@@ -48,10 +48,10 @@ void histo(unsigned int *data, unsigned int *bins, int len) {
   __syncthreads();
 
   // Copy histo in global memory
-  i = id;
+  i = threadIdx.x;
   while (i < NUM_BINS) {
     atomicAdd(&(bins[i]), privateHisto[i]);
-    i += totalNumberOfThreads;
+    i += blockDim.x;
   }
 }
 
@@ -96,7 +96,6 @@ int main(int argc, char *argv[]) {
     CUDA_CHECK(cudaDeviceSynchronize());
     wbTime_stop(GPU, "Copying input memory to the GPU.");
 
-    // TODO: find good values
     dim3 block(BLOCK_SIZE);
     dim3 grid((BLOCK_SIZE - 1) / inputLength + 1);
 
