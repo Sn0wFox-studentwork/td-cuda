@@ -7,6 +7,12 @@
 
 #define BLOCK_SIZE 256
 #define STENCIL_POINTS 7
+#define value(tab, i, j, k) tab[(i * width + j) * depth + k]
+#define in(i, j, k) value(input, i, j, k)
+#define out(i, j, k) value(output, i, j, k)
+#define MIN(v1, v2) (v1 < v2 ? v1 : v2)
+#define MAX(v1, v2) (v1 > v2 ? v1 : v2)
+#define CLAMP(val, start, end) MAX(MIN(val, end), start)
 #define wbCheck(stmt) \
 do { \
   cudaError_t err = stmt; \
@@ -19,13 +25,19 @@ do { \
 
 
 __global__ void stencil(float *output, float *input, int width, int height, int depth) {
-  int id = threadIdx.x + blockDim.x * blockIdx.x;
+  int i = threadIdx.x + blockDim.x * blockIdx.x;
+  int j = threadIdx.y + blockDim.y * blockIdx.y;
+
+  for (int k = 1; k < depth - 2; k++) {
+    int res = in(i, j, k + 1) + in(i, j, k - 1) + in(i, j + 1, k) + in(i, j - 1, k) + in(i + 1, j, k) + in(i - 1, j, k) - 6 * in(i, j, k);
+    out(i, j, k) = CLAMP(res, 0, 255);
+  }
 }
 
 
 static void launch_stencil(float *deviceOutputData, float *deviceInputData, int width, int height, int depth) {
-  dim3 block(BLOCK_SIZE);
-  dim3 grid((BLOCK_SIZE - 1) / STENCIL_POINTS); // TODO: use block 2D
+  dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
+  dim3 grid((width - 1) / block.x +1, (height -1)/block.y +1);
   stencil <<< block, grid >>> (deviceOutputData, deviceInputData, width, height, depth);
 }
 
