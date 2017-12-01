@@ -24,33 +24,40 @@ int main(int argc, char *argv[]) {
     unsigned int *deviceInput;
     unsigned int *deviceBins;
     args = wbArg_read(argc, argv);
+
     wbTime_start(Generic, "Importing data and creating memory on host");
     hostInput = (unsigned int *)wbImport(wbArg_getInputFile(args, 0), &inputLength);
     hostBins = (unsigned int *)malloc(NUM_BINS * sizeof(unsigned int));
     wbTime_stop(Generic, "Importing data and creating memory on host");
+
     wbLog(TRACE, "The input length is ", inputLength);
     wbLog(TRACE, "The number of bins is ", NUM_BINS);
+
     wbTime_start(GPU, "Allocating GPU memory.");
-    //@@ Allocate GPU memory here
+      //@@ Allocate GPU memory here
     CUDA_CHECK(cudaDeviceSynchronize());
     wbTime_stop(GPU, "Allocating GPU memory.");
+
     wbTime_start(GPU, "Copying input memory to the GPU.");
-    //@@ Copy memory to the GPU here
+      //@@ Copy memory to the GPU here
     CUDA_CHECK(cudaDeviceSynchronize());
     wbTime_stop(GPU, "Copying input memory to the GPU.");
+
+
     // Launch kernel
     // ----------------------------------------------------------
     wbLog(TRACE, "Launching kernel");
     wbTime_start(Compute, "Performing CUDA computation");
-    //@@ Perform kernel computation here
+      //@@ Perform kernel computation here
     wbTime_stop(Compute, "Performing CUDA computation");
-    wbTime_start(Copy, "Copying output memory to the CPU");
 
-    //@@ Copy the GPU memory back to the CPU here
+    wbTime_start(Copy, "Copying output memory to the CPU");
+      //@@ Copy the GPU memory back to the CPU here
     CUDA_CHECK(cudaDeviceSynchronize());
     wbTime_stop(Copy, "Copying output memory to the CPU");
+
     wbTime_start(GPU, "Freeing GPU Memory");
-    //@@ Free the GPU memory here
+      //@@ Free the GPU memory here
     wbTime_stop(GPU, "Freeing GPU Memory");
  
     free(hostBins);
