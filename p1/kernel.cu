@@ -6,6 +6,7 @@
 
 #ifndef __CUDACC__
 void atomicAdd(void *address, int rightSide);
+void __syncthreads();
 #endif
 
 
@@ -26,11 +27,30 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 
 __global__
 void histo(unsigned int *data, unsigned int *bins, int len) {
-  int i = threadIdx.x + blockDim.x * blockIdx.x;
+  int id = threadIdx.x + blockDim.x * blockIdx.x;
+  int i = id;
   int totalNumberOfThreads = blockDim.x * gridDim.x;
 
+  // Init shared memory (faster than global)
+  __shared__ unsigned int privateHisto[NUM_BINS];
+  while (i < NUM_BINS) {
+    privateHisto[i] = 0;
+    i += totalNumberOfThreads;
+  }
+  __syncthreads();
+
+  // Compute histo locally (in shared memory)
+  i = id;
   while (i < len) {
-    atomicAdd(&(bins[data[i]]), 1);
+    atomicAdd(&(privateHisto[data[i]]), 1);
+    i += totalNumberOfThreads;
+  }
+  __syncthreads();
+
+  // Copy histo in global memory
+  i = id;
+  while (i < NUM_BINS) {
+    atomicAdd(&(bins[i]), privateHisto[i]);
     i += totalNumberOfThreads;
   }
 }
